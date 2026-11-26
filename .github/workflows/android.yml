@@ -25,9 +25,26 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Extraer proyecto
+      - name: Extraer y configurar proyecto
         run: |
           unzip -q PoolMaster_Android_Prototype.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("PoolMaster/app/build.gradle.kts")
+          s = p.read_text()
+          marker = "    buildFeatures { compose = true }"
+          replacement = """    compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          """ + marker
+          if marker not in s:
+              raise SystemExit("No se encontró el bloque buildFeatures")
+          p.write_text(s.replace(marker, replacement, 1))
+          PY
           cd PoolMaster
           gradle wrapper --gradle-version 8.9
 
@@ -42,4 +59,3 @@ jobs:
         with:
           name: PoolMaster-APK
           path: PoolMaster/app/build/outputs/apk/debug/app-debug.apk
-          
